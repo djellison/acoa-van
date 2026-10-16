@@ -32,7 +32,7 @@ data(id){if(!ready||failed)return{status:failed?'error':'loading',data:[]};
 onData(fn){fns.push(fn);requestAnimationFrame(()=>{try{fn()}catch(e){console.error(e)}})},refresh(){},params(){return{}},setParams(){},resetParams(){},setLink(){}};
 Promise.all(['data/van_signups.csv','data/van_trips.csv'].map(u=>fetch(u).then(r=>{if(!r.ok)throw new Error(u);return r.text()}))).then(([s,t])=>{
  DATA.signups=d3.csvParse(s).map(r=>({date:r['Date'],quarter:r['Fiscal quarter'],quarter_start:qStart(r['Fiscal quarter']),needs:num(r['Needs']),social:num(r['Social']),total:num(r['Total'])}));
- DATA.trips=d3.csvParse(t).map(r=>({date:r['Date'],quarter:r['Fiscal quarter'],quarter_start:qStart(r['Fiscal quarter']),destination:r['Destination'],category:r['Type'],riders:num(r['Riders']),upt:num(r['UPT']),miles:num(r['Miles']),fare:num(r['Fare']),tolls:num(r['Tolls']),parking:num(r['Parking']),other_exp:num(r['Other expense']),fuel:num(r['Fuel (gas card)']),gallons:num(r['Gallons']),cash_out:num(r['Cash turned in'])}));
+ DATA.trips=d3.csvParse(t).map(r=>({date:r['Date'],van:r['Van']||'',quarter:r['Fiscal quarter'],quarter_start:qStart(r['Fiscal quarter']),destination:r['Destination'],category:r['Type'],riders:num(r['Riders']),upt:num(r['UPT']),miles:num(r['Miles']),fare:num(r['Fare']),tolls:num(r['Tolls']),parking:num(r['Parking']),other_exp:num(r['Other expense']),fuel:num(r['Fuel (gas card)']),gallons:num(r['Gallons']),cash_out:num(r['Cash turned in'])}));
  ready=true;run();}).catch(e=>{console.error(e);failed=true;ready=true;run();});
 let t;addEventListener('resize',()=>{clearTimeout(t);t=setTimeout(run,150)});return api})();
 </script></head>
@@ -97,7 +97,19 @@ let t;addEventListener('resize',()=>{clearTimeout(t);t=setTimeout(run,150)});ret
 .vd th[aria-sort=descending] button::after{content:" ↓"}
 .vd [data-dash-source-state=empty]{color:transparent}
 .vd [data-dash-source-state=refreshing]{opacity:.5;transition:opacity var(--cds-dur-slow)}
-@media (max-width:560px){.vd .vd-hide-narrow{display:none}}
+.vd-vcmp{min-height:420px}
+.vd-vrow{display:grid;grid-template-columns:minmax(9rem,15rem) 1fr;gap:var(--cds-gap-xs) var(--cds-gap-md);padding:var(--cds-pad-sm) 0;border-bottom:1px solid var(--color-border-line);align-items:center}
+.vd-vrow:last-child{border-bottom:0}
+.vd-vlab{font-size:var(--cds-font-size-body)}
+.vd-vlab small{display:block;font-size:var(--cds-font-size-caption);color:var(--color-fg-muted)}
+.vd-vbars{display:flex;flex-direction:column;gap:6px;min-width:0}
+.vd-vbar{display:grid;grid-template-columns:4.25rem 1fr 5.5rem;align-items:center;gap:var(--cds-gap-sm);font-size:var(--cds-font-size-caption);font-variant-numeric:tabular-nums}
+.vd-vbar .nm{color:var(--color-fg-muted)}
+.vd-vbar .vv{text-align:right;font-weight:var(--cds-font-weight-medium)}
+.vd-vtrack{height:10px;background:var(--cds-chart-grid);border-radius:999px;overflow:hidden}
+.vd-vfill{height:100%;border-radius:999px}
+.vd-vtext{font-size:var(--cds-font-size-caption);font-variant-numeric:tabular-nums;display:flex;flex-direction:column;gap:4px}
+@media (max-width:560px){.vd .vd-hide-narrow{display:none}.vd-vrow{grid-template-columns:1fr}}
 </style>
 
 <div class="vd">
@@ -201,6 +213,16 @@ let t;addEventListener('resize',()=>{clearTimeout(t);t=setTimeout(run,150)});ret
     </div>
   </section>
 
+  <section id="vans">
+    <h2 class="vd-section">By van</h2>
+    <div class="vd-card">
+      <h2 id="vans-title">Van comparison</h2>
+      <p class="vd-note">Each van over its full time in service, from the trip log. Fuel economy and fuel cost per mile count only miles driven after each van's first gas-card fill-up; operating cost adds tolls, parking and supplies. Net cashflow is shown per month, since the vans served for different lengths of time.</p>
+      <div class="vd-legend" id="van-legend"></div>
+      <div class="vd-vcmp dash-skeleton" id="van-cmp" data-source="vans"></div>
+    </div>
+  </section>
+
   <section id="destinations">
     <div class="vd-card">
       <div class="vd-cardhead"><h2 id="dest-title">Trip destinations by popularity</h2><button class="vd-btn" id="dest-toggle" type="button">Show all</button></div>
@@ -290,6 +312,45 @@ dash.calc('dest', {
       riders_per_trip: Math.round(d.riders / d.trips * 10) / 10,
       type: d.needs >= d.social ? 'Needs' : 'Social'
     })).sort((a, b) => b.riders - a.riders);
+  }
+});
+
+dash.calc('vans', {
+  title: 'Van comparison',
+  description: 'Per-van totals over each van’s time in service: trips, riders, miles, fuel economy, cost per mile, fares per trip and net cashflow per month.',
+  inputs: ['trips'],
+  fn: (trips) => {
+    const m = new Map();
+    for (const t of trips) {
+      const v = t.van || 'Unknown';
+      if (!m.has(v)) m.set(v, []);
+      m.get(v).push(t);
+    }
+    const r2 = x => Math.round(x * 100) / 100, r1 = x => Math.round(x * 10) / 10, r3 = x => Math.round(x * 1000) / 1000;
+    return [...m.entries()].map(([van, rows]) => {
+      const dates = rows.map(r => r.date).sort();
+      const fuelDates = rows.filter(r => Number(r.fuel) > 0).map(r => r.date).sort();
+      const firstFuel = fuelDates[0] || dates[0];
+      let trips_ = 0, riders = 0, miles = 0, milesFueled = 0, gallons = 0, fuel = 0, expenses = 0, fares = 0;
+      for (const r of rows) {
+        const rd = Number(r.riders) || 0, mi = Number(r.miles) || 0;
+        if (rd > 0) trips_++;
+        riders += rd; miles += mi; if (r.date >= firstFuel) milesFueled += mi;
+        gallons += Number(r.gallons) || 0; fuel += Number(r.fuel) || 0; fares += Number(r.fare) || 0;
+        expenses += (Number(r.tolls) || 0) + (Number(r.parking) || 0) + (Number(r.other_exp) || 0);
+      }
+      const months = (new Date(dates[dates.length - 1]) - new Date(dates[0])) / 86400000 / 30.44;
+      const net = fares - expenses - fuel;
+      return {
+        van, first: dates[0], last: dates[dates.length - 1], months: r1(months), trips: trips_, riders,
+        riders_per_trip: trips_ ? r1(riders / trips_) : null, miles,
+        mpg: gallons ? r1(milesFueled / gallons) : null,
+        fuel_per_mile: milesFueled ? r3(fuel / milesFueled) : null,
+        cost_per_mile: milesFueled && miles ? r3(fuel / milesFueled + expenses / miles) : null,
+        fares_per_trip: trips_ ? r2(fares / trips_) : null,
+        net: r2(net), net_per_month: months ? r2(net / months) : null
+      };
+    }).sort((a, b) => a.first < b.first ? -1 : 1);
   }
 });
 
@@ -585,6 +646,67 @@ function drawDest(D) {
     .on('pointerleave', () => { bars.attr('opacity', 1); hideTip(box); });
 }
 
+/* ---------- Van comparison ---------- */
+const vanColor = i => dash.colors[[6, 3, 7, 4][i % 4]];
+function drawVans(V) {
+  const box = document.getElementById('van-cmp'), leg = document.getElementById('van-legend');
+  if (!prep(box, V)) { leg.textContent = ''; return; }
+  const vans = V.data;
+  box.textContent = ''; leg.textContent = '';
+  const fmtD = s => d3.utcFormat('%b %Y')(new Date(s));
+  vans.forEach((v, i) => {
+    const s = document.createElement('span'); const sw = document.createElement('i'); sw.className = 'vd-sw'; sw.style.background = vanColor(i);
+    s.append(sw, document.createTextNode(v.van)); leg.appendChild(s);
+  });
+  const mk = (el, v, field) => { el.dataset.source = 'vans'; el.dataset.field = field; el.dataset.where = 'van=' + encodeURIComponent(v.van); };
+  const metrics = [
+    ['service', 'Time in service', null],
+    ['trips', 'Trips with riders', fmtInt],
+    ['riders_per_trip', 'Riders per trip', d3.format('.1f')],
+    ['miles', 'Miles driven', fmtInt],
+    ['mpg', 'Fuel economy', x => d3.format('.1f')(x) + ' mpg', 'higher is better'],
+    ['fuel_per_mile', 'Fuel cost per mile', x => '$' + d3.format('.2f')(x), 'lower is better'],
+    ['cost_per_mile', 'Operating cost per mile', x => '$' + d3.format('.2f')(x), 'fuel + tolls, parking, supplies'],
+    ['fares_per_trip', 'Fares per trip', x => '$' + d3.format('.2f')(x)],
+    ['net_per_month', 'Net cashflow per month', fmtMoney, 'after fuel and expenses']
+  ];
+  for (const [field, label, fmt, hint] of metrics) {
+    const row = document.createElement('div'); row.className = 'vd-vrow';
+    const lab = document.createElement('div'); lab.className = 'vd-vlab'; lab.textContent = label;
+    if (hint) { const sm = document.createElement('small'); sm.textContent = hint; lab.appendChild(sm); }
+    row.appendChild(lab);
+    if (field === 'service') {
+      const t = document.createElement('div'); t.className = 'vd-vtext';
+      vans.forEach((v, i) => {
+        const line = document.createElement('div');
+        const sw = document.createElement('i'); sw.className = 'vd-sw'; sw.style.background = vanColor(i);
+        const a = document.createElement('span'); a.textContent = fmtD(v.first); mk(a, v, 'first');
+        const b = document.createElement('span'); b.textContent = fmtD(v.last); mk(b, v, 'last');
+        const mo = document.createElement('span'); mo.textContent = d3.format('.1f')(v.months); mk(mo, v, 'months');
+        line.append(sw, document.createTextNode(v.van + ': '), a, document.createTextNode(' – '), b, document.createTextNode(' ('), mo, document.createTextNode(' months)'));
+        t.appendChild(line);
+      });
+      row.appendChild(t); box.appendChild(row); continue;
+    }
+    const max = d3.max(vans, v => Math.abs(v[field] ?? 0)) || 1;
+    const bars = document.createElement('div'); bars.className = 'vd-vbars';
+    vans.forEach((v, i) => {
+      const b = document.createElement('div'); b.className = 'vd-vbar';
+      const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = v.van;
+      const tr = document.createElement('div'); tr.className = 'vd-vtrack';
+      const fill = document.createElement('div'); fill.className = 'vd-vfill';
+      const val = v[field];
+      fill.style.width = (val == null ? 0 : Math.max(2, Math.abs(val) / max * 100)) + '%';
+      fill.style.background = val != null && val < 0 ? 'var(--color-bad)' : vanColor(i);
+      tr.appendChild(fill);
+      const vv = document.createElement('span'); vv.className = 'vv'; vv.textContent = val == null ? '—' : fmt(val); mk(vv, v, field);
+      if (val != null && val < 0) vv.classList.add('vd-down');
+      b.append(nm, tr, vv); bars.appendChild(b);
+    });
+    row.appendChild(bars); box.appendChild(row);
+  }
+}
+
 /* ---------- Table ---------- */
 let sortKey = 'quarter_start', sortDir = -1;
 document.querySelectorAll('#ops-table th button').forEach(b => b.addEventListener('click', () => {
@@ -617,13 +739,13 @@ function drawTable(C) {
 }
 
 dash.onData(() => {
-  const S = dash.data('signups_q'), C = dash.data('cash_q'), D = dash.data('dest'), K = dash.data('kpi'), Cv = dash.data('coverage');
-  for (const f of [() => drawKpis(K), () => drawSparks(S, C, K), () => drawCoverage(Cv), () => drawRiders(S), () => drawPerTrip(S), () => drawCash(C), () => drawDest(D), () => drawTable(C)]) {
+  const S = dash.data('signups_q'), C = dash.data('cash_q'), D = dash.data('dest'), K = dash.data('kpi'), Cv = dash.data('coverage'), V = dash.data('vans');
+  for (const f of [() => drawVans(V), () => drawKpis(K), () => drawSparks(S, C, K), () => drawCoverage(Cv), () => drawRiders(S), () => drawPerTrip(S), () => drawCash(C), () => drawDest(D), () => drawTable(C)]) {
     try { f(); } catch (e) { console.error(e); }
   }
 });
 })();
 </script>
 
-<p class="vd-foot">Amesbury Council on Aging van program. Data: COA Van Signup Macro (Jul 2022 – Sep 2026) and ACOA Van Trip Log (May 2025 – Oct 2026). Last updated Oct 15, 2026. Download the data: <a href="data/van_signups.csv">sign-ups</a> · <a href="data/van_trips.csv">trip log</a>.</p>
+<p class="vd-foot">Amesbury Council on Aging van program. Data: COA Van Signup Macro (Jul 2022 – Sep 2026) and ACOA Van Trip Log, vans M1443B and M9423B (May 2024 – Oct 2026). Last updated Oct 16, 2026. Download the data: <a href="data/van_signups.csv">sign-ups</a> · <a href="data/van_trips.csv">trip log</a>.</p>
 </div></body></html>
