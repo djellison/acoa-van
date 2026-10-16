@@ -1,0 +1,629 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>ACOA Van Ridership &amp; Cashflow</title>
+<style>
+:root{--font-anthropic-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;--font-anthropic-serif:Georgia,"Times New Roman",serif;
+--color-fg:#1f1e1d;--color-fg-muted:#6b6a68;--color-bg:#faf9f7;--color-panel:#ffffff;--color-border-line:#e6e3dd;--color-ok:#2f7d4f;--color-bad:#b3412e;
+--cds-border:#dedad3;--cds-chart-axis:#a8a49c;--cds-chart-grid:#ece9e3;--cds-chart-muted:#c9c5bd;--cds-chart-reference:#9c978e;--cds-dur-slow:.35s;--cds-ease-out:cubic-bezier(.2,.7,.2,1);
+--cds-font-size-caption:12px;--cds-font-size-body:14px;--cds-font-size-heading:16px;--cds-font-size-title:30px;--cds-font-weight-medium:550;
+--cds-gap-xs:4px;--cds-gap-sm:8px;--cds-gap-md:16px;--cds-gap-lg:24px;--cds-gap-xl:32px;--cds-pad-xs:4px;--cds-pad-sm:8px;--cds-pad-md:12px;--cds-pad-lg:18px;--cds-radius:10px;
+--cds-shadow-popover:0 4px 16px rgba(0,0,0,.12);--cds-surface-popover:#fff;--cds-text-secondary:#6b6a68}
+@media (prefers-color-scheme:dark){:root{--color-fg:#ecebe8;--color-fg-muted:#a3a19c;--color-bg:#1c1b1a;--color-panel:#262524;--color-border-line:#393735;--color-ok:#6cc08b;--color-bad:#ec7a66;
+--cds-border:#44413e;--cds-chart-axis:#6c6964;--cds-chart-grid:#33312f;--cds-chart-muted:#55524e;--cds-chart-reference:#7d7a74;--cds-surface-popover:#2f2e2c;--cds-text-secondary:#a3a19c}}
+html,body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(--font-anthropic-sans)}
+#dash-root{max-width:1280px;margin:0 auto;padding:24px 20px 40px}
+.dash-skeleton{color:transparent!important;background:var(--cds-chart-grid);border-radius:6px}
+.vd-foot{margin-top:24px;font-size:12px;color:var(--color-fg-muted)}
+
+.vd-foot a{color:inherit}</style>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script>
+window.dash=(function(){const DATA={};let ready=false,failed=false;const calcs={},cache={},fns=[];
+const colors=['#2a78b8','#d9822b','#3a9e6b','#8a5cc2','#c2477a','#2f9fa8','#a3843a','#6b7a8f'];
+const qStart=q=>{const y=2000+ +q.slice(2,4),n=+q.slice(-1);return n===1?`${y-1}-07-01`:n===2?`${y-1}-10-01`:n===3?`${y}-01-01`:`${y}-04-01`};
+const num=v=>v===''||v==null?0:+v;
+const run=()=>fns.forEach(f=>{try{f()}catch(e){console.error(e)}});
+const api={colors,calc(id,o){calcs[id]=o},
+data(id){if(!ready||failed)return{status:failed?'error':'loading',data:[]};
+ if(DATA[id])return{status:'ok',data:DATA[id],columns:Object.keys(DATA[id][0]||{})};
+ if(!(id in cache)){const c=calcs[id];if(!c)return{status:'missing',data:[]};cache[id]=c.fn(...c.inputs.map(i=>api.data(i).data));}
+ return{status:'ok',data:cache[id]}},
+onData(fn){fns.push(fn);requestAnimationFrame(()=>{try{fn()}catch(e){console.error(e)}})},refresh(){},params(){return{}},setParams(){},resetParams(){},setLink(){}};
+Promise.all(['data/van_signups.csv','data/van_trips.csv'].map(u=>fetch(u).then(r=>{if(!r.ok)throw new Error(u);return r.text()}))).then(([s,t])=>{
+ DATA.signups=d3.csvParse(s).map(r=>({date:r['Date'],quarter:r['Fiscal quarter'],quarter_start:qStart(r['Fiscal quarter']),needs:num(r['Needs']),social:num(r['Social']),total:num(r['Total'])}));
+ DATA.trips=d3.csvParse(t).map(r=>({date:r['Date'],quarter:r['Fiscal quarter'],quarter_start:qStart(r['Fiscal quarter']),destination:r['Destination'],category:r['Type'],riders:num(r['Riders']),upt:num(r['UPT']),miles:num(r['Miles']),fare:num(r['Fare']),tolls:num(r['Tolls']),parking:num(r['Parking']),other_exp:num(r['Other expense']),fuel:num(r['Fuel (gas card)']),gallons:num(r['Gallons']),cash_out:num(r['Cash turned in'])}));
+ ready=true;run();}).catch(e=>{console.error(e);failed=true;ready=true;run();});
+let t;addEventListener('resize',()=>{clearTimeout(t);t=setTimeout(run,150)});return api})();
+</script></head>
+<body><div id="dash-root">
+<style>
+.vd{font-family:var(--font-anthropic-sans);display:flex;flex-direction:column;gap:var(--cds-gap-lg)}
+.vd-head h1{font-family:var(--font-anthropic-serif);font-weight:400;font-size:var(--cds-font-size-title);margin:0}
+.vd-take{color:var(--color-fg-muted);margin:var(--cds-gap-xs) 0 0;font-size:var(--cds-font-size-body);font-variant-numeric:tabular-nums}
+.vd-window{font-size:var(--cds-font-size-caption);color:var(--color-fg-muted);margin:0 0 var(--cds-gap-sm)}
+.vd-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,12rem),1fr));gap:var(--cds-gap-md)}
+.vd-kpi{position:relative;overflow:hidden;box-shadow:inset 0 3px 0 var(--k,transparent);display:flex;flex-direction:column;gap:var(--cds-gap-xs)}
+.vd-kpi::after{content:"";position:absolute;right:-2.5rem;top:-2.5rem;width:7rem;height:7rem;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--k,transparent) 16%,transparent),transparent 70%);pointer-events:none}
+.vd-kpi-top{display:flex;align-items:center;gap:var(--cds-gap-sm)}
+.vd-ico{display:inline-flex;align-items:center;justify-content:center;width:2rem;height:2rem;border-radius:50%;flex:none;color:var(--k);background:color-mix(in srgb,var(--k,transparent) 15%,transparent)}
+.vd-kpi .lab{font-size:var(--cds-font-size-caption);color:var(--color-fg-muted)}
+.vd-kpi-mid{display:flex;align-items:baseline;gap:var(--cds-gap-sm);flex-wrap:wrap}
+.vd-kpi .val{font-family:var(--font-anthropic-serif);font-weight:400;font-size:var(--cds-font-size-title);font-variant-numeric:tabular-nums;min-height:1.2em;min-width:3ch}
+.vd-pill{font-size:var(--cds-font-size-caption);font-variant-numeric:tabular-nums;font-weight:var(--cds-font-weight-medium);padding:1px .5rem;border-radius:999px;background:color-mix(in srgb,var(--color-fg-muted) 12%,transparent);color:var(--color-fg-muted)}
+.vd-pill.vd-up{background:color-mix(in srgb,var(--color-ok) 15%,transparent)}
+.vd-pill.vd-down{background:color-mix(in srgb,var(--color-bad) 15%,transparent)}
+.vd-pill.vd-up::before{content:"▲ ";font-size:.7em;vertical-align:1px}
+.vd-pill.vd-down::before{content:"▼ ";font-size:.7em;vertical-align:1px}
+.vd-spark{position:relative;height:48px;margin-top:var(--cds-gap-xs)}
+.vd-spark svg{display:block;overflow:visible}
+.vd-kpi .chg{font-size:var(--cds-font-size-caption);font-variant-numeric:tabular-nums;color:var(--color-fg-muted)}
+@media (prefers-reduced-motion:no-preference){
+  .vd-anim .vd-sl{stroke-dasharray:1;stroke-dashoffset:1;animation:vd-draw var(--cds-dur-slow) var(--cds-ease-out) forwards;animation-duration:calc(var(--cds-dur-slow) * 3)}
+  .vd-anim .vd-sa,.vd-anim .vd-sd{opacity:0;animation:vd-fade var(--cds-dur-slow) var(--cds-ease-out) forwards;animation-delay:var(--cds-dur-slow)}
+}
+@keyframes vd-draw{to{stroke-dashoffset:0}}
+@keyframes vd-fade{to{opacity:1}}
+.vd-up{color:var(--color-ok)}
+.vd-down{color:var(--color-bad)}
+.vd-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,24rem),1fr));gap:var(--cds-gap-md)}
+.vd-section{font-size:var(--cds-font-size-heading);font-weight:var(--cds-font-weight-medium);margin:0 0 var(--cds-gap-sm)}
+.vd-card h2{font-size:var(--cds-font-size-heading);font-weight:var(--cds-font-weight-medium);margin:0}
+.vd-note{font-size:var(--cds-font-size-caption);color:var(--color-fg-muted);margin:var(--cds-gap-xs) 0 var(--cds-gap-md)}
+.vd-legend{display:flex;gap:var(--cds-gap-md);flex-wrap:wrap;font-size:var(--cds-font-size-caption);color:var(--color-fg-muted);margin-bottom:var(--cds-gap-sm)}
+.vd-sw{display:inline-block;width:.625rem;height:.625rem;border-radius:2px;margin-right:.375rem;vertical-align:-1px}
+.vd-chart{position:relative;min-height:280px}
+.vd-chart svg{display:block}
+.vd-chart svg text{fill:var(--color-fg-muted);font-size:var(--cds-font-size-caption);font-family:var(--font-anthropic-sans)}
+.vd-chart svg text.vd-strong{fill:var(--color-fg)}
+.vd-tip{position:absolute;display:none;pointer-events:none;z-index:2;background:var(--cds-surface-popover);border:1px solid var(--cds-border);border-radius:var(--cds-radius);box-shadow:var(--cds-shadow-popover);padding:var(--cds-pad-xs) var(--cds-pad-sm);font-size:var(--cds-font-size-caption);white-space:nowrap;font-variant-numeric:tabular-nums}
+.vd-tip-h{color:var(--cds-text-secondary);margin-bottom:2px}
+.vd-tip-r{display:flex;align-items:center;gap:.5rem}
+.vd-tip-r b{margin-left:auto;padding-left:.75rem;font-weight:var(--cds-font-weight-medium)}
+.vd-tip-r .vd-sw{margin-right:0}
+.vd-fail{display:flex;align-items:center;justify-content:center;gap:.5rem;min-height:inherit;color:var(--color-fg-muted);font-size:var(--cds-font-size-caption)}
+.vd-fail::before{content:"";width:.375rem;height:.375rem;border-radius:50%;background:var(--color-bad)}
+.vd-btn{all:unset;cursor:pointer;font-size:var(--cds-font-size-caption);color:var(--color-fg-muted);text-decoration:underline;text-underline-offset:2px}
+.vd-toggle{display:inline-flex;align-items:center;gap:.375rem;font-size:var(--cds-font-size-caption);color:var(--color-fg-muted);cursor:pointer;white-space:nowrap}
+.vd-toggle input{margin:0;accent-color:var(--color-fg)}
+.vd-cardhead{display:flex;justify-content:space-between;align-items:baseline;gap:var(--cds-gap-sm)}
+.vd-tablewrap{max-height:28rem;overflow:auto}
+.vd table{width:100%;border-collapse:collapse;font-size:var(--cds-font-size-caption);font-variant-numeric:tabular-nums}
+.vd th,.vd td{padding:var(--cds-pad-xs) var(--cds-pad-sm);text-align:right;border-bottom:1px solid var(--color-border-line);white-space:nowrap}
+.vd th:first-child,.vd td:first-child{text-align:left}
+.vd th{position:sticky;top:0;background:var(--color-panel);color:var(--color-fg-muted);font-weight:var(--cds-font-weight-medium)}
+.vd th button{all:unset;cursor:pointer}
+.vd th[aria-sort=ascending] button::after{content:" ↑"}
+.vd th[aria-sort=descending] button::after{content:" ↓"}
+.vd [data-dash-source-state=empty]{color:transparent}
+.vd [data-dash-source-state=refreshing]{opacity:.5;transition:opacity var(--cds-dur-slow)}
+@media (max-width:560px){.vd .vd-hide-narrow{display:none}}
+</style>
+
+<div class="vd">
+  <header class="vd-head">
+    <h1 id="top">ACOA van ridership &amp; cashflow</h1>
+    <p class="vd-take" id="takeaway">
+      In <span data-source="kpi" data-field="quarter" data-where="metric=riders" class="dash-skeleton">—</span>,
+      <span data-source="kpi" data-field="value" data-where="metric=riders" class="dash-skeleton">—</span> riders signed up
+      (<span data-source="kpi" data-field="change" data-where="metric=riders" class="dash-skeleton">—</span> vs the same quarter last year),
+      and the van netted <span data-source="kpi" data-field="value" data-where="metric=net" class="dash-skeleton">—</span> after fuel and expenses.
+    </p>
+  </header>
+
+  <section id="headline">
+    <p class="vd-window">Latest full quarter, <span data-source="kpi" data-field="quarter" data-where="metric=needs">—</span>, compared with <span data-source="kpi" data-field="prev_quarter" data-where="metric=needs">—</span>. Fiscal year runs July–June.</p>
+    <div class="vd-kpis">
+      <div class="vd-card vd-kpi" data-metric="riders" data-ci="3">
+        <div class="vd-kpi-top"><span class="vd-ico"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 19v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 17.5V19"/><circle cx="10" cy="8" r="3.5"/><path d="M20 19v-1.5a3.5 3.5 0 0 0-2.5-3.35"/><path d="M15.5 4.6a3.5 3.5 0 0 1 0 6.8"/></svg></span><span class="lab">Riders signed up</span></div>
+        <div class="vd-kpi-mid"><div class="val dash-skeleton" data-source="kpi" data-field="value" data-where="metric=riders">—</div><span class="vd-pill" data-source="kpi" data-field="change" data-where="metric=riders">—</span></div>
+        <div class="vd-spark dash-skeleton" data-source="signups_q" data-metric="riders"></div>
+        <div class="chg">vs <span data-source="kpi" data-field="prev" data-where="metric=riders">—</span> in <span data-source="kpi" data-field="prev_quarter" data-where="metric=riders">—</span></div>
+      </div>
+      <div class="vd-card vd-kpi" data-metric="needs" data-ci="0">
+        <div class="vd-kpi-top"><span class="vd-ico"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14l-1 12H6L5 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg></span><span class="lab">Needs riders</span></div>
+        <div class="vd-kpi-mid"><div class="val dash-skeleton" data-source="kpi" data-field="value" data-where="metric=needs">—</div><span class="vd-pill" data-source="kpi" data-field="change" data-where="metric=needs">—</span></div>
+        <div class="vd-spark dash-skeleton" data-source="signups_q" data-metric="needs"></div>
+        <div class="chg">vs <span data-source="kpi" data-field="prev" data-where="metric=needs">—</span> in <span data-source="kpi" data-field="prev_quarter" data-where="metric=needs">—</span></div>
+      </div>
+      <div class="vd-card vd-kpi" data-metric="social" data-ci="1">
+        <div class="vd-kpi-top"><span class="vd-ico"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6-5.6-6-10.5a6 6 0 0 1 12 0C18 15.4 12 21 12 21z"/><circle cx="12" cy="10.5" r="2.2"/></svg></span><span class="lab">Social riders</span></div>
+        <div class="vd-kpi-mid"><div class="val dash-skeleton" data-source="kpi" data-field="value" data-where="metric=social">—</div><span class="vd-pill" data-source="kpi" data-field="change" data-where="metric=social">—</span></div>
+        <div class="vd-spark dash-skeleton" data-source="signups_q" data-metric="social"></div>
+        <div class="chg">vs <span data-source="kpi" data-field="prev" data-where="metric=social">—</span> in <span data-source="kpi" data-field="prev_quarter" data-where="metric=social">—</span></div>
+      </div>
+      <div class="vd-card vd-kpi" data-metric="per_trip" data-ci="4">
+        <div class="vd-kpi-top"><span class="vd-ico"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 16V8a2 2 0 0 1 2-2h10l4 4a2 2 0 0 1 2 2v4h-2"/><path d="M3 16h2M9 16h6M15 6v4h6"/><circle cx="7" cy="16.5" r="2"/><circle cx="17" cy="16.5" r="2"/></svg></span><span class="lab">Riders per trip</span></div>
+        <div class="vd-kpi-mid"><div class="val dash-skeleton" data-source="kpi" data-field="value" data-where="metric=per_trip">—</div><span class="vd-pill" data-source="kpi" data-field="change" data-where="metric=per_trip">—</span></div>
+        <div class="vd-spark dash-skeleton" data-source="signups_q" data-metric="per_trip"></div>
+        <div class="chg">vs <span data-source="kpi" data-field="prev" data-where="metric=per_trip">—</span> in <span data-source="kpi" data-field="prev_quarter" data-where="metric=per_trip">—</span></div>
+      </div>
+      <div class="vd-card vd-kpi" data-metric="fares" data-ci="5">
+        <div class="vd-kpi-top"><span class="vd-ico"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6.5 9.5v5M17.5 9.5v5"/></svg></span><span class="lab">Fares collected</span></div>
+        <div class="vd-kpi-mid"><div class="val dash-skeleton" data-source="kpi" data-field="value" data-where="metric=fares">—</div><span class="vd-pill" data-source="kpi" data-field="change" data-where="metric=fares">—</span></div>
+        <div class="vd-spark dash-skeleton" data-source="cash_q" data-metric="fares"></div>
+        <div class="chg">vs <span data-source="kpi" data-field="prev" data-where="metric=fares">—</span> in <span data-source="kpi" data-field="prev_quarter" data-where="metric=fares">—</span></div>
+      </div>
+      <div class="vd-card vd-kpi" data-metric="net" data-ci="2">
+        <div class="vd-kpi-top"><span class="vd-ico"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span><span class="lab">Net cashflow</span></div>
+        <div class="vd-kpi-mid"><div class="val dash-skeleton" data-source="kpi" data-field="value" data-where="metric=net">—</div><span class="vd-pill" data-source="kpi" data-field="change" data-where="metric=net">—</span></div>
+        <div class="vd-spark dash-skeleton" data-source="cash_q" data-metric="net"></div>
+        <div class="chg">vs <span data-source="kpi" data-field="prev" data-where="metric=net">—</span> in <span data-source="kpi" data-field="prev_quarter" data-where="metric=net">—</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="ridership">
+    <h2 class="vd-section">Ridership by quarter</h2>
+    <div class="vd-grid">
+      <div class="vd-card">
+        <h2 id="riders-title">Needs vs Social riders</h2>
+        <p class="vd-note">Sign-ups per fiscal quarter. Needs = Friday ONT and essentials shopping run; Social = outings and events.</p>
+        <div class="vd-legend"><span><i class="vd-sw vd-c0"></i>Needs</span><span><i class="vd-sw vd-c1"></i>Social</span></div>
+        <div class="vd-chart dash-skeleton" id="riders-chart" data-source="signups_q"></div>
+      </div>
+      <div class="vd-card">
+        <h2 id="pertrip-title">Average riders per trip</h2>
+        <p class="vd-note">Riders ÷ trips that had at least one sign-up, by trip type.</p>
+        <div class="vd-chart dash-skeleton" id="pertrip-chart" data-source="signups_q"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="cashflow">
+    <h2 class="vd-section">Cashflow</h2>
+    <div class="vd-grid">
+      <div class="vd-card">
+        <div class="vd-cardhead"><h2 id="cash-title">Net cashflow by quarter</h2><label class="vd-toggle"><input type="checkbox" id="fuel-toggle" checked> Include fuel</label></div>
+        <p class="vd-note">Fares in, minus tolls, parking, supplies and (when included) gas-card fuel. Trip log covers <span data-source="coverage" data-field="first" data-where="source=trips">—</span> to <span data-source="coverage" data-field="last" data-where="source=trips">—</span>, so the first and last quarters are partial.</p>
+        <div class="vd-legend"><span><i class="vd-sw vd-c0"></i>Fares</span><span><i class="vd-sw vd-cm"></i><span id="cost-label">Expenses + fuel</span></span><span><i class="vd-sw vd-c2"></i>Net</span></div>
+        <div class="vd-chart dash-skeleton" id="cash-chart" data-source="cash_q"></div>
+      </div>
+      <div class="vd-card">
+        <h2 id="table-title">Quarterly operations</h2>
+        <p class="vd-note">From the trip log. Cash handed to COA staff is a transfer, not a cost, so it isn't subtracted.</p>
+        <div class="vd-tablewrap">
+          <table id="ops-table" data-source="cash_q" data-row-key="quarter">
+            <thead><tr>
+              <th data-field="quarter"><button data-k="quarter_start">Quarter</button></th>
+              <th data-field="trips" class="vd-hide-narrow"><button data-k="trips">Trips</button></th>
+              <th data-field="riders"><button data-k="riders">Riders</button></th>
+              <th data-field="miles" class="vd-hide-narrow"><button data-k="miles">Miles</button></th>
+              <th data-field="fares"><button data-k="fares">Fares</button></th>
+              <th data-field="expenses" class="vd-hide-narrow"><button data-k="expenses">Expenses</button></th>
+              <th data-field="fuel" class="vd-hide-narrow"><button data-k="fuel">Fuel</button></th>
+              <th data-field="net"><button data-k="net">Net</button></th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="destinations">
+    <div class="vd-card">
+      <div class="vd-cardhead"><h2 id="dest-title">Trip destinations by popularity</h2><button class="vd-btn" id="dest-toggle" type="button">Show all</button></div>
+      <p class="vd-note">Total riders per destination since the trip log began. Color shows whether it's mostly a Needs or Social run. A break (//) marks a bar shortened to keep the others readable; its number is the full total.</p>
+      <div class="vd-legend"><span><i class="vd-sw vd-c0"></i>Needs</span><span><i class="vd-sw vd-c1"></i>Social</span></div>
+      <div class="vd-chart dash-skeleton" id="dest-chart" data-source="dest"></div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+const fmtInt = d3.format(',');
+const fmtMoney = v => (v < 0 ? '−$' : '$') + d3.format(',.0f')(Math.abs(v));
+const fmtPct = v => (v > 0 ? '+' : v < 0 ? '−' : '') + d3.format('.0%')(Math.abs(v));
+const fmtDate = s => d3.utcFormat('%b %-d, %Y')(new Date(s));
+
+document.querySelectorAll('.vd-c0').forEach(e => e.style.background = dash.colors[0]);
+document.querySelectorAll('.vd-c1').forEach(e => e.style.background = dash.colors[1]);
+document.querySelectorAll('.vd-c2').forEach(e => e.style.background = dash.colors[2]);
+document.querySelectorAll('.vd-cm').forEach(e => e.style.background = 'var(--cds-chart-muted)');
+
+dash.calc('signups_q', {
+  title: 'Riders by quarter',
+  description: 'Van sign-ups summed by fiscal quarter (July–June year), split into Needs and Social, with trips and riders per trip.',
+  inputs: ['signups'],
+  fn: (signups) => {
+    const m = new Map();
+    for (const r of signups) {
+      let q = m.get(r.quarter);
+      if (!q) { q = {quarter: r.quarter, quarter_start: r.quarter_start, needs: 0, social: 0, total: 0, needs_trips: 0, social_trips: 0}; m.set(r.quarter, q); }
+      const n = Number(r.needs) || 0, s = Number(r.social) || 0;
+      q.needs += n; q.social += s; q.total += n + s;
+      if (n > 0) q.needs_trips++;
+      if (s > 0) q.social_trips++;
+    }
+    return [...m.values()].sort((a, b) => a.quarter_start < b.quarter_start ? -1 : 1).map(q => ({
+      ...q,
+      needs_per_trip: q.needs_trips ? Math.round(q.needs / q.needs_trips * 10) / 10 : null,
+      social_per_trip: q.social_trips ? Math.round(q.social / q.social_trips * 10) / 10 : null,
+      total_per_trip: (q.needs_trips + q.social_trips) ? Math.round(q.total / (q.needs_trips + q.social_trips) * 10) / 10 : null
+    }));
+  }
+});
+
+dash.calc('cash_q', {
+  title: 'Cashflow by quarter',
+  description: 'Trip log totals by fiscal quarter: fares in, cash expenses (tolls, parking, supplies) and gas-card fuel out, and the net.',
+  inputs: ['trips'],
+  fn: (trips) => {
+    const m = new Map();
+    for (const t of trips) {
+      let q = m.get(t.quarter);
+      if (!q) { q = {quarter: t.quarter, quarter_start: t.quarter_start, trips: 0, riders: 0, miles: 0, fares: 0, expenses: 0, fuel: 0}; m.set(t.quarter, q); }
+      const riders = Number(t.riders) || 0;
+      if (riders > 0) q.trips++;
+      q.riders += riders;
+      q.miles += Number(t.miles) || 0;
+      q.fares += Number(t.fare) || 0;
+      q.expenses += (Number(t.tolls) || 0) + (Number(t.parking) || 0) + (Number(t.other_exp) || 0);
+      q.fuel += Number(t.fuel) || 0;
+    }
+    const r2 = x => Math.round(x * 100) / 100;
+    return [...m.values()].sort((a, b) => a.quarter_start < b.quarter_start ? -1 : 1).map(q => ({
+      quarter: q.quarter, quarter_start: q.quarter_start, trips: q.trips, riders: q.riders, miles: q.miles,
+      fares: r2(q.fares), expenses: r2(q.expenses), fuel: r2(q.fuel), net: r2(q.fares - q.expenses - q.fuel), net_before_fuel: r2(q.fares - q.expenses)
+    }));
+  }
+});
+
+dash.calc('dest', {
+  title: 'Riders by destination',
+  description: 'Riders and trips per destination in the trip log, typed by whether most riders went on a Needs or Social run.',
+  inputs: ['trips'],
+  fn: (trips) => {
+    const m = new Map();
+    for (const t of trips) {
+      const r = Number(t.riders) || 0;
+      if (!t.destination || r <= 0) continue;
+      let d = m.get(t.destination);
+      if (!d) { d = {destination: t.destination, riders: 0, trips: 0, needs: 0, social: 0}; m.set(t.destination, d); }
+      d.riders += r; d.trips++;
+      if (t.category === 'Needs') d.needs += r; else d.social += r;
+    }
+    return [...m.values()].map(d => ({
+      destination: d.destination, riders: d.riders, trips: d.trips,
+      riders_per_trip: Math.round(d.riders / d.trips * 10) / 10,
+      type: d.needs >= d.social ? 'Needs' : 'Social'
+    })).sort((a, b) => b.riders - a.riders);
+  }
+});
+
+dash.calc('coverage', {
+  title: 'Date coverage',
+  description: 'First and last dates in each file.',
+  inputs: ['trips', 'signups'],
+  fn: (trips, signups) => {
+    const span = (rows) => { const d = rows.map(r => r.date).sort(); return {first: d[0], last: d[d.length - 1]}; };
+    return [{source: 'trips', ...span(trips)}, {source: 'signups', ...span(signups)}];
+  }
+});
+
+dash.calc('kpi', {
+  title: 'Latest quarter vs last year',
+  description: 'The latest full sign-up quarter against the same quarter a year earlier.',
+  inputs: ['signups_q', 'cash_q'],
+  fn: (signups_q, cash_q) => {
+    const L = signups_q[signups_q.length - 1];
+    const pk = 'FY' + String(Number(L.quarter.slice(2, 4)) - 1).padStart(2, '0') + ' ' + L.quarter.slice(5);
+    const P = signups_q.find(q => q.quarter === pk) || {};
+    const cL = cash_q.find(q => q.quarter === L.quarter) || {};
+    const cP = cash_q.find(q => q.quarter === pk) || {};
+    const per = q => (q.needs_trips + q.social_trips) ? Math.round(q.total / (q.needs_trips + q.social_trips) * 10) / 10 : null;
+    const row = (metric, value, prev) => ({
+      metric, quarter: L.quarter, prev_quarter: pk, value: value ?? null, prev: prev ?? null,
+      change: (value != null && prev) ? Math.round((value - prev) / Math.abs(prev) * 1000) / 1000 : null
+    });
+    return [
+      row('riders', L.total, P.total), row('needs', L.needs, P.needs), row('social', L.social, P.social),
+      row('per_trip', per(L), P.total != null ? per(P) : null),
+      row('fares', cL.fares, cP.fares), row('net', cL.net, cP.net)
+    ];
+  }
+});
+
+/* ---------- helpers ---------- */
+const failed = s => ['error', 'connect', 'declined', 'missing'].includes(s.status);
+function prep(box, src) {
+  if (src.status === 'ok' && Array.isArray(src.data)) { box.classList.remove('dash-skeleton'); return true; }
+  box.textContent = '';
+  if (failed(src)) { box.classList.remove('dash-skeleton'); const f = document.createElement('div'); f.className = 'vd-fail'; f.textContent = 'Failed to load'; box.appendChild(f); }
+  else box.classList.add('dash-skeleton');
+  return false;
+}
+function tipEl(box) { let t = box.querySelector('.vd-tip'); if (!t) { t = document.createElement('div'); t.className = 'vd-tip'; box.appendChild(t); } return t; }
+function showTip(box, title, lines, px, py) {
+  const t = tipEl(box); t.textContent = '';
+  const h = document.createElement('div'); h.className = 'vd-tip-h'; h.textContent = title; t.appendChild(h);
+  for (const [color, name, val] of lines) {
+    const r = document.createElement('div'); r.className = 'vd-tip-r';
+    if (color) { const s = document.createElement('i'); s.className = 'vd-sw'; s.style.background = color; r.appendChild(s); }
+    const n = document.createElement('span'); n.textContent = name;
+    const v = document.createElement('b'); v.textContent = val;
+    r.append(n, v); t.appendChild(r);
+  }
+  t.style.display = 'block';
+  const bw = box.clientWidth, tw = t.offsetWidth, th = t.offsetHeight;
+  let left = px + 14; if (left + tw > bw) left = px - tw - 14; if (left < 0) left = 0;
+  t.style.left = left + 'px'; t.style.top = Math.max(0, Math.min(box.clientHeight - th, py - th / 2)) + 'px';
+}
+const hideTip = box => { const t = box.querySelector('.vd-tip'); if (t) t.style.display = 'none'; };
+function textW(svg, s) { const t = svg.append('text').text(s); const w = t.node().getComputedTextLength(); t.remove(); return w; }
+function newSvg(box, W, H) { box.textContent = ''; return d3.select(box).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`); }
+function xLabels(svg, rows, x, H, key) {
+  const maxW = d3.max(rows, d => textW(svg, d[key])) + 10;
+  const every = Math.max(1, Math.ceil(maxW / x.step()));
+  svg.append('g').selectAll('text').data(rows.filter((d, i) => (rows.length - 1 - i) % every === 0)).join('text')
+    .attr('x', d => x(d[key]) + x.bandwidth() / 2).attr('y', H - 6).attr('text-anchor', 'middle').text(d => d[key]);
+}
+
+/* ---------- KPIs ---------- */
+function drawKpis(K) {
+  const els = document.querySelectorAll('[data-source="kpi"]');
+  const rows = K.status === 'ok' && Array.isArray(K.data) ? K.data : null;
+  els.forEach(el => {
+    el.classList.toggle('dash-skeleton', K.status === 'loading' && el.classList.contains('val'));
+    if (!rows) { el.textContent = '—'; el.classList.remove('vd-up', 'vd-down'); return; }
+    const metric = new URLSearchParams(el.dataset.where).get('metric');
+    const r = rows.find(x => x.metric === metric); const f = el.dataset.field;
+    el.classList.remove('dash-skeleton', 'vd-up', 'vd-down');
+    if (!r || r[f] == null) { el.textContent = '—'; return; }
+    const v = r[f];
+    if (f === 'change') { el.textContent = fmtPct(v); el.classList.add(v >= 0 ? 'vd-up' : 'vd-down'); }
+    else if (f === 'value' || f === 'prev') el.textContent = (metric === 'fares' || metric === 'net') ? fmtMoney(v) : metric === 'per_trip' ? d3.format('.1f')(v) : fmtInt(v);
+    else el.textContent = v;
+  });
+}
+
+document.querySelectorAll('.vd-kpi[data-ci]').forEach(t => t.style.setProperty('--k', dash.colors[+t.dataset.ci]));
+
+/* ---------- KPI sparklines (last 8 quarters up to the KPI quarter) ---------- */
+const sparkField = {riders: 'total', needs: 'needs', social: 'social', per_trip: 'total_per_trip', fares: 'fares', net: 'net'};
+let sparkAnimated = false;
+function drawSparks(S, C, K) {
+  const kq = K.status === 'ok' && K.data && K.data[0] ? K.data[0] : null;
+  let drew = false;
+  document.querySelectorAll('.vd-spark').forEach(box => {
+    const metric = box.dataset.metric, src = box.dataset.source === 'cash_q' ? C : S;
+    if (!prep(box, src) || !kq) { if (!kq && src.status === 'ok') box.classList.add('dash-skeleton'); return; }
+    const end = src.data.findIndex(d => d.quarter === kq.quarter);
+    const rows = src.data.slice(0, end < 0 ? src.data.length : end + 1).slice(-8).filter(d => d[sparkField[metric]] != null);
+    if (rows.length < 2) { box.textContent = ''; return; }
+    const k = sparkField[metric], color = dash.colors[+box.closest('.vd-kpi').dataset.ci];
+    const money = metric === 'fares' || metric === 'net';
+    const fmt = v => money ? fmtMoney(v) : metric === 'per_trip' ? d3.format('.1f')(v) : fmtInt(v);
+    const W = Math.max(120, box.clientWidth), H = 48, p = 5;
+    const svg = newSvg(box, W, H);
+    const x = d3.scalePoint(rows.map(d => d.quarter), [p, W - p]);
+    const lo = Math.min(0, d3.min(rows, d => d[k])), hi = d3.max(rows, d => d[k]) || 1;
+    const y = d3.scaleLinear([lo, hi], [H - 3, p]);
+    const gid = 'vd-g-' + metric;
+    const grad = svg.append('defs').append('linearGradient').attr('id', gid).attr('x1', 0).attr('x2', 0).attr('y1', 0).attr('y2', 1);
+    [[0, .3], [.25, .18], [.5, .09], [.75, .03], [1, 0]].forEach(([o, a]) => grad.append('stop').attr('offset', o).attr('style', `stop-color:${color};stop-opacity:${a}`));
+    if (lo < 0) svg.append('line').attr('x1', p).attr('x2', W - p).attr('y1', y(0)).attr('y2', y(0)).attr('stroke', 'var(--cds-chart-reference)').attr('stroke-dasharray', '2 3');
+    svg.append('path').attr('class', 'vd-sa').datum(rows).attr('fill', `url(#${gid})`)
+      .attr('d', d3.area().x(d => x(d.quarter)).y0(y(Math.max(0, lo))).y1(d => y(d[k])));
+    svg.append('path').attr('class', 'vd-sl').datum(rows).attr('pathLength', 1).attr('fill', 'none').attr('stroke', color).attr('stroke-width', 2).attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round')
+      .attr('d', d3.line().x(d => x(d.quarter)).y(d => y(d[k])));
+    const prev = rows.find(d => d.quarter === kq.prev_quarter);
+    if (prev) svg.append('circle').attr('class', 'vd-sd').attr('cx', x(prev.quarter)).attr('cy', y(prev[k])).attr('r', 3).attr('fill', 'var(--color-panel)').attr('stroke', 'var(--cds-chart-muted)').attr('stroke-width', 1.5);
+    const last = rows[rows.length - 1];
+    svg.append('circle').attr('class', 'vd-sd').attr('cx', x(last.quarter)).attr('cy', y(last[k])).attr('r', 6).attr('fill', color).attr('opacity', .2);
+    svg.append('circle').attr('class', 'vd-sd').attr('cx', x(last.quarter)).attr('cy', y(last[k])).attr('r', 3).attr('fill', color);
+    const hover = svg.append('circle').attr('r', 3).attr('fill', color).attr('opacity', 0);
+    svg.append('rect').attr('width', W).attr('height', H).attr('fill', 'transparent')
+      .on('pointermove', ev => {
+        const [px, py] = d3.pointer(ev, box);
+        const i = Math.max(0, Math.min(rows.length - 1, Math.round((px - p) / (x.step() || 1))));
+        const d = rows[i];
+        hover.attr('cx', x(d.quarter)).attr('cy', y(d[k])).attr('opacity', 1);
+        showTip(box, d.quarter, [[null, box.closest('.vd-kpi').querySelector('.lab').textContent, fmt(d[k])]], px, py);
+      })
+      .on('pointerleave', () => { hover.attr('opacity', 0); hideTip(box); });
+    drew = true;
+  });
+  const wrap = document.querySelector('.vd-kpis');
+  if (drew && !sparkAnimated) { wrap.classList.add('vd-anim'); sparkAnimated = true; }
+  else if (drew) wrap.classList.remove('vd-anim');
+}
+
+function drawCoverage(Cv) {
+  document.querySelectorAll('[data-source="coverage"]').forEach(el => {
+    if (Cv.status !== 'ok') { el.textContent = '—'; return; }
+    const src = new URLSearchParams(el.dataset.where).get('source');
+    const r = Cv.data.find(x => x.source === src);
+    el.textContent = r && r[el.dataset.field] ? fmtDate(r[el.dataset.field]) : '—';
+  });
+}
+
+/* ---------- Riders stacked bars ---------- */
+function drawRiders(S) {
+  const box = document.getElementById('riders-chart'); if (!prep(box, S)) return;
+  const rows = S.data, W = Math.max(280, box.clientWidth), H = 280, m = {t: 10, r: 4, b: 26, l: 0};
+  const svg = newSvg(box, W, H);
+  const y = d3.scaleLinear([0, d3.max(rows, d => d.total) || 1], [H - m.b, m.t]).nice();
+  const ticks = y.ticks(5);
+  m.l = d3.max(ticks, t => textW(svg, fmtInt(t))) + 8;
+  const x = d3.scaleBand(rows.map(d => d.quarter), [m.l, W - m.r]).padding(0.25);
+  svg.append('g').selectAll('line').data(ticks).join('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', y).attr('y2', y).attr('stroke', 'var(--cds-chart-grid)');
+  svg.append('g').selectAll('text').data(ticks).join('text').attr('x', m.l - 6).attr('y', y).attr('dy', '0.32em').attr('text-anchor', 'end').text(fmtInt);
+  xLabels(svg, rows, x, H, 'quarter');
+  const bw = Math.min(32, x.bandwidth()), off = (x.bandwidth() - bw) / 2;
+  const g = svg.append('g');
+  const bars = g.selectAll('g').data(rows).join('g');
+  bars.append('rect').attr('x', d => x(d.quarter) + off).attr('width', bw).attr('y', d => y(d.needs)).attr('height', d => y(0) - y(d.needs)).attr('fill', dash.colors[0]);
+  bars.append('rect').attr('x', d => x(d.quarter) + off).attr('width', bw).attr('y', d => y(d.total)).attr('height', d => y(d.needs) - y(d.total)).attr('fill', dash.colors[1]);
+  svg.append('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', y(0)).attr('y2', y(0)).attr('stroke', 'var(--cds-chart-axis)');
+  svg.append('g').selectAll('rect').data(rows).join('rect').attr('x', d => x(d.quarter)).attr('width', x.step()).attr('y', m.t).attr('height', H - m.b - m.t).attr('fill', 'transparent')
+    .on('pointermove', (ev, d) => {
+      bars.attr('opacity', b => b === d ? 1 : 0.45);
+      const [px, py] = d3.pointer(ev, box);
+      showTip(box, d.quarter, [[dash.colors[0], 'Needs', fmtInt(d.needs)], [dash.colors[1], 'Social', fmtInt(d.social)], [null, 'Total', fmtInt(d.total)]], px, py);
+    })
+    .on('pointerleave', () => { bars.attr('opacity', 1); hideTip(box); });
+}
+
+/* ---------- Riders per trip lines ---------- */
+function drawPerTrip(S) {
+  const box = document.getElementById('pertrip-chart'); if (!prep(box, S)) return;
+  const rows = S.data, W = Math.max(280, box.clientWidth), H = 280, m = {t: 12, r: 0, b: 26, l: 0};
+  const svg = newSvg(box, W, H);
+  const series = [{k: 'needs_per_trip', name: 'Needs', c: dash.colors[0]}, {k: 'social_per_trip', name: 'Social', c: dash.colors[1]}];
+  const last = rows[rows.length - 1];
+  m.r = d3.max(series, s => textW(svg, `${s.name} ${last[s.k] ?? '—'}`)) + 10;
+  const y = d3.scaleLinear([0, d3.max(rows, d => Math.max(d.needs_per_trip || 0, d.social_per_trip || 0)) || 1], [H - m.b, m.t]).nice();
+  const ticks = y.ticks(5);
+  m.l = d3.max(ticks, t => textW(svg, fmtInt(t))) + 8;
+  const x = d3.scaleBand(rows.map(d => d.quarter), [m.l, W - m.r]).padding(0.25);
+  const cx = d => x(d.quarter) + x.bandwidth() / 2;
+  svg.append('g').selectAll('line').data(ticks).join('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', y).attr('y2', y).attr('stroke', 'var(--cds-chart-grid)');
+  svg.append('g').selectAll('text').data(ticks).join('text').attr('x', m.l - 6).attr('y', y).attr('dy', '0.32em').attr('text-anchor', 'end').text(fmtInt);
+  xLabels(svg, rows, x, H, 'quarter');
+  const ends = [];
+  for (const s of series) {
+    const line = d3.line().defined(d => d[s.k] != null).x(cx).y(d => y(d[s.k]));
+    svg.append('path').datum(rows).attr('d', line).attr('fill', 'none').attr('stroke', s.c).attr('stroke-width', 2).attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round');
+    if (last[s.k] != null) ends.push({s, y: y(last[s.k])});
+  }
+  ends.sort((a, b) => a.y - b.y);
+  if (ends.length === 2 && ends[1].y - ends[0].y < 14) { const mid = (ends[0].y + ends[1].y) / 2; ends[0].y = mid - 7; ends[1].y = mid + 7; }
+  for (const e of ends) svg.append('text').attr('class', 'vd-strong').attr('x', W - m.r + 6).attr('y', e.y).attr('dy', '0.32em').text(`${e.s.name} ${last[e.s.k]}`);
+  const rule = svg.append('line').attr('y1', m.t).attr('y2', H - m.b).attr('stroke', 'var(--cds-chart-reference)').attr('opacity', 0);
+  const dots = series.map(s => svg.append('circle').attr('r', 4).attr('fill', s.c).attr('opacity', 0));
+  svg.append('rect').attr('x', m.l).attr('y', m.t).attr('width', W - m.r - m.l).attr('height', H - m.b - m.t).attr('fill', 'transparent')
+    .on('pointermove', ev => {
+      const [px, py] = d3.pointer(ev, box);
+      const i = Math.max(0, Math.min(rows.length - 1, Math.floor((px - m.l - x.paddingOuter() * x.step()) / x.step())));
+      const d = rows[i];
+      rule.attr('x1', cx(d)).attr('x2', cx(d)).attr('opacity', 1);
+      series.forEach((s, j) => dots[j].attr('cx', cx(d)).attr('cy', d[s.k] != null ? y(d[s.k]) : -10).attr('opacity', d[s.k] != null ? 1 : 0));
+      showTip(box, d.quarter, series.map(s => [s.c, s.name, d[s.k] != null ? d3.format('.1f')(d[s.k]) : '—']), px, py);
+    })
+    .on('pointerleave', () => { rule.attr('opacity', 0); dots.forEach(c => c.attr('opacity', 0)); hideTip(box); });
+}
+
+/* ---------- Cashflow ---------- */
+function drawCash(C) {
+  const box = document.getElementById('cash-chart'); if (!prep(box, C)) return;
+  const inc = document.getElementById('fuel-toggle').checked;
+  document.getElementById('cost-label').textContent = inc ? 'Expenses + fuel' : 'Expenses (no fuel)';
+  const rows = C.data.map(d => ({...d, costs: inc ? d.expenses + d.fuel : d.expenses, net: inc ? d.net : d.net_before_fuel}));
+  const W = Math.max(280, box.clientWidth), H = 280, m = {t: 12, r: 4, b: 26, l: 0};
+  const svg = newSvg(box, W, H);
+  const y = d3.scaleLinear([-(d3.max(rows, d => d.costs) || 1), d3.max(rows, d => Math.max(d.fares, d.net)) || 1], [H - m.b, m.t]).nice();
+  const ticks = y.ticks(6);
+  m.l = d3.max(ticks, t => textW(svg, fmtMoney(t))) + 8;
+  const x = d3.scaleBand(rows.map(d => d.quarter), [m.l, W - m.r]).padding(0.3);
+  const cx = d => x(d.quarter) + x.bandwidth() / 2;
+  svg.append('g').selectAll('line').data(ticks).join('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', y).attr('y2', y).attr('stroke', 'var(--cds-chart-grid)');
+  svg.append('g').selectAll('text').data(ticks).join('text').attr('x', m.l - 6).attr('y', y).attr('dy', '0.32em').attr('text-anchor', 'end').text(fmtMoney);
+  xLabels(svg, rows, x, H, 'quarter');
+  const bw = Math.min(32, x.bandwidth()), off = (x.bandwidth() - bw) / 2;
+  const bars = svg.append('g').selectAll('g').data(rows).join('g');
+  bars.append('rect').attr('x', d => x(d.quarter) + off).attr('width', bw).attr('y', d => y(d.fares)).attr('height', d => y(0) - y(d.fares)).attr('fill', dash.colors[0]).attr('rx', 3);
+  bars.append('rect').attr('x', d => x(d.quarter) + off).attr('width', bw).attr('y', y(0)).attr('height', d => y(-d.costs) - y(0)).attr('fill', 'var(--cds-chart-muted)').attr('rx', 3);
+  svg.append('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', y(0)).attr('y2', y(0)).attr('stroke', 'var(--cds-chart-axis)');
+  svg.append('path').datum(rows).attr('d', d3.line().x(cx).y(d => y(d.net))).attr('fill', 'none').attr('stroke', dash.colors[2]).attr('stroke-width', 2).attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round');
+  svg.append('g').selectAll('circle').data(rows).join('circle').attr('cx', cx).attr('cy', d => y(d.net)).attr('r', 3.5).attr('fill', dash.colors[2]);
+  svg.append('g').selectAll('rect').data(rows).join('rect').attr('x', d => x(d.quarter)).attr('width', x.step()).attr('y', m.t).attr('height', H - m.b - m.t).attr('fill', 'transparent')
+    .on('pointermove', (ev, d) => {
+      bars.attr('opacity', b => b.quarter === d.quarter ? 1 : 0.45);
+      const [px, py] = d3.pointer(ev, box);
+      showTip(box, d.quarter, [[dash.colors[0], 'Fares', fmtMoney(d.fares)], [null, 'Tolls, parking, supplies', fmtMoney(-d.expenses)], ...(inc ? [[null, 'Fuel (gas card)', fmtMoney(-d.fuel)]] : []), [dash.colors[2], inc ? 'Net' : 'Net before fuel', fmtMoney(d.net)]], px, py);
+    })
+    .on('pointerleave', () => { bars.attr('opacity', 1); hideTip(box); });
+}
+
+document.getElementById('fuel-toggle').addEventListener('change', () => drawCash(dash.data('cash_q')));
+
+/* ---------- Destinations ---------- */
+let showAll = false;
+document.getElementById('dest-toggle').addEventListener('click', () => {
+  showAll = !showAll;
+  document.getElementById('dest-toggle').textContent = showAll ? 'Show top 15' : 'Show all';
+  drawDest(dash.data('dest'));
+});
+function drawDest(D) {
+  const box = document.getElementById('dest-chart'); if (!prep(box, D)) return;
+  const all = D.data, rows = showAll ? all : all.slice(0, 15);
+  document.getElementById('dest-toggle').style.display = all.length > 15 ? '' : 'none';
+  const W = Math.max(280, box.clientWidth), rowH = 26, m = {t: 4, r: 0, b: 4, l: 0};
+  const H = rows.length * rowH + m.t + m.b;
+  box.style.minHeight = H + 'px';
+  const svg = newSvg(box, W, H);
+  m.l = Math.min(W * 0.45, d3.max(rows, d => textW(svg, d.destination)) + 10);
+  m.r = d3.max(rows, d => textW(svg, fmtInt(d.riders))) + 10;
+  const y = d3.scaleBand(rows.map(d => d.destination), [m.t, H - m.b]).padding(0.25);
+  // Broken scale: when the top bar dwarfs the rest, cap the scale just past the runner-up and draw a break in the outlier bar.
+  const vals = rows.map(d => d.riders).sort((a, b) => b - a);
+  const top = vals[0] || 1, second = vals[1] || 0;
+  const broken = second > 0 && top > second * 1.6;
+  const cap = broken ? second * 1.3 : top;
+  const x = d3.scaleLinear([0, cap], [m.l, W - m.r]).clamp(true);
+  const color = d => d.type === 'Needs' ? dash.colors[0] : dash.colors[1];
+  svg.append('g').selectAll('text').data(rows).join('text').attr('x', m.l - 8).attr('y', d => y(d.destination) + y.bandwidth() / 2).attr('dy', '0.32em').attr('text-anchor', 'end').attr('class', 'vd-strong').text(d => d.destination);
+  const bars = svg.append('g').selectAll('rect').data(rows).join('rect').attr('x', m.l).attr('y', d => y(d.destination)).attr('height', y.bandwidth()).attr('width', d => Math.max(2, x(d.riders) - m.l)).attr('fill', color).attr('rx', 4);
+  if (broken) {
+    const bx = x(second * 1.12), gap = 7, slant = 5;
+    const brk = svg.append('g').selectAll('g').data(rows.filter(d => d.riders > cap)).join('g');
+    brk.append('polygon').attr('fill', 'var(--color-panel)')
+      .attr('points', d => { const t = y(d.destination) - 1, b = y(d.destination) + y.bandwidth() + 1; return `${bx + slant},${t} ${bx + slant + gap},${t} ${bx + gap},${b} ${bx},${b}`; });
+    [0, gap].forEach(o => brk.append('line').attr('stroke', 'var(--cds-chart-axis)').attr('stroke-width', 1.25).attr('stroke-linecap', 'round')
+      .attr('x1', bx + slant + o).attr('y1', d => y(d.destination) - 3).attr('x2', bx + o).attr('y2', d => y(d.destination) + y.bandwidth() + 3));
+  }
+  svg.append('g').selectAll('text').data(rows).join('text').attr('x', d => x(d.riders) + 6).attr('y', d => y(d.destination) + y.bandwidth() / 2).attr('dy', '0.32em').text(d => fmtInt(d.riders));
+  svg.append('g').selectAll('rect').data(rows).join('rect').attr('x', 0).attr('width', W).attr('y', d => y(d.destination) - y.step() * y.paddingInner() / 2).attr('height', y.step()).attr('fill', 'transparent')
+    .on('pointermove', (ev, d) => {
+      bars.attr('opacity', b => b === d ? 1 : 0.45);
+      const [px, py] = d3.pointer(ev, box);
+      showTip(box, d.destination, [[color(d), d.type + ' riders', fmtInt(d.riders)], [null, 'Trips', fmtInt(d.trips)], [null, 'Riders per trip', d3.format('.1f')(d.riders_per_trip)]], px, py);
+    })
+    .on('pointerleave', () => { bars.attr('opacity', 1); hideTip(box); });
+}
+
+/* ---------- Table ---------- */
+let sortKey = 'quarter_start', sortDir = -1;
+document.querySelectorAll('#ops-table th button').forEach(b => b.addEventListener('click', () => {
+  const k = b.dataset.k; if (k === sortKey) sortDir = -sortDir; else { sortKey = k; sortDir = k === 'quarter_start' ? -1 : -1; }
+  drawTable(dash.data('cash_q'));
+}));
+function drawTable(C) {
+  const table = document.getElementById('ops-table'), tb = table.querySelector('tbody');
+  document.querySelectorAll('#ops-table th').forEach(th => {
+    const k = th.querySelector('button').dataset.k;
+    if (k === sortKey) th.setAttribute('aria-sort', sortDir > 0 ? 'ascending' : 'descending'); else th.removeAttribute('aria-sort');
+  });
+  tb.textContent = '';
+  if (C.status !== 'ok' || !Array.isArray(C.data)) {
+    const tr = tb.insertRow(); const td = tr.insertCell(); td.colSpan = 8;
+    if (failed(C)) { const f = document.createElement('div'); f.className = 'vd-fail'; f.textContent = 'Failed to load'; td.appendChild(f); }
+    else td.className = 'dash-skeleton';
+    return;
+  }
+  const rows = [...C.data].sort((a, b) => { const A = a[sortKey], B = b[sortKey]; return (A < B ? -1 : A > B ? 1 : 0) * sortDir; });
+  const cols = [['quarter', v => v], ['trips', fmtInt, true], ['riders', fmtInt], ['miles', fmtInt, true], ['fares', fmtMoney], ['expenses', fmtMoney, true], ['fuel', fmtMoney, true], ['net', fmtMoney]];
+  for (const r of rows) {
+    const tr = tb.insertRow();
+    for (const [k, f, narrow] of cols) {
+      const td = tr.insertCell(); td.textContent = f(r[k]);
+      if (narrow) td.className = 'vd-hide-narrow';
+      if (k === 'net') td.classList.add(r.net >= 0 ? 'vd-up' : 'vd-down');
+    }
+  }
+}
+
+dash.onData(() => {
+  const S = dash.data('signups_q'), C = dash.data('cash_q'), D = dash.data('dest'), K = dash.data('kpi'), Cv = dash.data('coverage');
+  for (const f of [() => drawKpis(K), () => drawSparks(S, C, K), () => drawCoverage(Cv), () => drawRiders(S), () => drawPerTrip(S), () => drawCash(C), () => drawDest(D), () => drawTable(C)]) {
+    try { f(); } catch (e) { console.error(e); }
+  }
+});
+})();
+</script>
+
+<p class="vd-foot">Amesbury Council on Aging van program. Data: COA Van Signup Macro (Jul 2022 – Sep 2026) and ACOA Van Trip Log (May 2025 – Oct 2026). Last updated Oct 15, 2026. Download the data: <a href="data/van_signups.csv">sign-ups</a> · <a href="data/van_trips.csv">trip log</a>.</p>
+</div></body></html>
