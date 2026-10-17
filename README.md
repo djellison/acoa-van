@@ -1,6 +1,6 @@
 # Amesbury Council On Aging Van Operations Dashboards
 
-Live dashboard: https://djellison.github.io/acoa-van/
+Live dashboard: https://acoa-van.dwjellison.workers.dev (Cloudflare, auto-deploys on push to `main`) · mirror: https://djellison.github.io/acoa-van/
 
 A public, no-login view of the ACOA van program's ridership and cashflow, grouped by fiscal quarter (July–June year).
 
