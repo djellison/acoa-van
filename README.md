@@ -18,3 +18,5 @@ A public, no-login view of the ACOA van program's ridership and cashflow, groupe
 ## Updating
 
 Replace the two CSV files in `data/` with new exports (same columns). The page recalculates everything from them on load.
+
+Pushing to `main` redeploys both the Cloudflare Worker (Workers Builds, config in `wrangler.jsonc`) and GitHub Pages.
