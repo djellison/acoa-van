@@ -1,0 +1,9 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "acoa-van",
+  "compatibility_date": "2026-10-01",
+  // Static-only Worker: serves index.html and data/*.csv straight from the repo root.
+  "assets": {
+    "directory": "."
+  }
+}
