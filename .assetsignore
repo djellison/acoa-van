@@ -3,3 +3,5 @@
 .gitignore
 wrangler.jsonc
 README.md
+.DS_Store
+CLAUDE.md
