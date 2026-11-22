@@ -27,6 +27,7 @@ html,body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:
 .vd-wr .chg2{text-align:right;font-variant-numeric:tabular-nums}
 .vd-wr .nums{color:var(--color-fg-muted);font-size:.85em}
 .vd-wkey{display:flex;gap:var(--cds-gap-sm);font-size:var(--cds-font-size-caption);color:var(--color-fg-muted);margin-top:var(--cds-gap-xs)}
+.vd-skey{font-size:var(--cds-font-size-caption);color:var(--color-fg-muted);margin:0 0 var(--cds-gap-sm)}.vd-skey svg{vertical-align:-2px}
 .vd-wkey i{display:inline-block;width:10px;height:7px;border-radius:999px;margin-right:4px}
 @media (max-width:560px){.vd-wr{grid-template-columns:6rem 1fr 3.8rem}}
 </style>
@@ -137,42 +138,43 @@ let t;addEventListener('resize',()=>{clearTimeout(t);t=setTimeout(run,150)});ret
   </header>
 
   <section id="headline">
-    <p class="vd-window">Latest quarter, <span data-source="kpi" data-field="cur_label" data-where="metric=needs">—</span>, compared with <span data-source="kpi" data-field="prev_label" data-where="metric=needs">—</span>, the same months a year earlier. Fiscal year runs July–June.</p>
+    <p class="vd-window">Fiscal year to date, <span data-source="kpi" data-field="cur_label" data-where="metric=needs">—</span>, compared with <span data-source="kpi" data-field="prev_label" data-where="metric=needs">—</span>, the same months a year earlier. Fiscal year runs July–June.</p>
+    <p class="vd-skey" aria-label="How to read the small charts">Small charts, running total from July:&ensp;<svg width="22" height="8" viewBox="0 0 22 8" aria-hidden="true"><line x1="1" x2="21" y1="4" y2="4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> solid colored line: <span data-source="kpi" data-field="cur_fy" data-where="metric=riders">—</span>&ensp;·&ensp;<svg width="22" height="8" viewBox="0 0 22 8" aria-hidden="true"><line x1="1" x2="21" y1="4" y2="4" stroke="var(--cds-chart-reference)" stroke-width="1.5" stroke-dasharray="3 3" stroke-linecap="round"/></svg> dashed grey line: <span data-source="kpi" data-field="prev_fy" data-where="metric=riders">—</span>&ensp;·&ensp;<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="4.2" fill="none" stroke="var(--cds-chart-reference)" stroke-width="1.5"/></svg> last year at the same point</p>
     <div class="vd-kpis">
       <div class="vd-card vd-kpi" data-metric="riders" data-ci="3">
         <div class="vd-kpi-top"><span class="vd-ico"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 19v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 17.5V19"/><circle cx="10" cy="8" r="3.5"/><path d="M20 19v-1.5a3.5 3.5 0 0 0-2.5-3.35"/><path d="M15.5 4.6a3.5 3.5 0 0 1 0 6.8"/></svg></span><span class="lab">Riders signed up</span></div>
         <div class="vd-kpi-mid"><div class="val dash-skeleton" data-source="kpi" data-field="value" data-where="metric=riders">—</div><span class="vd-pill" data-source="kpi" data-field="change" data-where="metric=riders">—</span></div>
-        <div class="vd-spark dash-skeleton" data-source="signups_q" data-metric="riders"></div>
+        <div class="vd-spark dash-skeleton" data-source="ytd" data-metric="riders"></div>
         <div class="chg">vs <span data-source="kpi" data-field="prev" data-where="metric=riders">—</span> in <span data-source="kpi" data-field="prev_label" data-where="metric=riders">—</span></div>
       </div>
       <div class="vd-card vd-kpi" data-metric="needs" data-ci="0">
         <div class="vd-kpi-top"><span class="vd-ico"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14l-1 12H6L5 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg></span><span class="lab">Needs riders</span></div>
         <div class="vd-kpi-mid"><div class="val dash-skeleton" data-source="kpi" data-field="value" data-where="metric=needs">—</div><span class="vd-pill" data-source="kpi" data-field="change" data-where="metric=needs">—</span></div>
-        <div class="vd-spark dash-skeleton" data-source="signups_q" data-metric="needs"></div>
+        <div class="vd-spark dash-skeleton" data-source="ytd" data-metric="needs"></div>
         <div class="chg">vs <span data-source="kpi" data-field="prev" data-where="metric=needs">—</span> in <span data-source="kpi" data-field="prev_label" data-where="metric=needs">—</span></div>
       </div>
       <div class="vd-card vd-kpi" data-metric="social" data-ci="1">
         <div class="vd-kpi-top"><span class="vd-ico"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6-5.6-6-10.5a6 6 0 0 1 12 0C18 15.4 12 21 12 21z"/><circle cx="12" cy="10.5" r="2.2"/></svg></span><span class="lab">Social riders</span></div>
         <div class="vd-kpi-mid"><div class="val dash-skeleton" data-source="kpi" data-field="value" data-where="metric=social">—</div><span class="vd-pill" data-source="kpi" data-field="change" data-where="metric=social">—</span></div>
-        <div class="vd-spark dash-skeleton" data-source="signups_q" data-metric="social"></div>
+        <div class="vd-spark dash-skeleton" data-source="ytd" data-metric="social"></div>
         <div class="chg">vs <span data-source="kpi" data-field="prev" data-where="metric=social">—</span> in <span data-source="kpi" data-field="prev_label" data-where="metric=social">—</span></div>
       </div>
       <div class="vd-card vd-kpi" data-metric="per_trip" data-ci="4">
         <div class="vd-kpi-top"><span class="vd-ico"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 16V8a2 2 0 0 1 2-2h10l4 4a2 2 0 0 1 2 2v4h-2"/><path d="M3 16h2M9 16h6M15 6v4h6"/><circle cx="7" cy="16.5" r="2"/><circle cx="17" cy="16.5" r="2"/></svg></span><span class="lab">Riders per trip</span></div>
         <div class="vd-kpi-mid"><div class="val dash-skeleton" data-source="kpi" data-field="value" data-where="metric=per_trip">—</div><span class="vd-pill" data-source="kpi" data-field="change" data-where="metric=per_trip">—</span></div>
-        <div class="vd-spark dash-skeleton" data-source="signups_q" data-metric="per_trip"></div>
+        <div class="vd-spark dash-skeleton" data-source="ytd" data-metric="per_trip"></div>
         <div class="chg">vs <span data-source="kpi" data-field="prev" data-where="metric=per_trip">—</span> in <span data-source="kpi" data-field="prev_label" data-where="metric=per_trip">—</span></div>
       </div>
       <div class="vd-card vd-kpi" data-metric="fares" data-ci="5">
         <div class="vd-kpi-top"><span class="vd-ico"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6.5 9.5v5M17.5 9.5v5"/></svg></span><span class="lab">Fares collected</span></div>
         <div class="vd-kpi-mid"><div class="val dash-skeleton" data-source="kpi" data-field="value" data-where="metric=fares">—</div><span class="vd-pill" data-source="kpi" data-field="change" data-where="metric=fares">—</span></div>
-        <div class="vd-spark dash-skeleton" data-source="cash_q" data-metric="fares"></div>
+        <div class="vd-spark dash-skeleton" data-source="ytd" data-metric="fares"></div>
         <div class="chg">vs <span data-source="kpi" data-field="prev" data-where="metric=fares">—</span> in <span data-source="kpi" data-field="prev_label" data-where="metric=fares">—</span></div>
       </div>
       <div class="vd-card vd-kpi" data-metric="net" data-ci="2">
         <div class="vd-kpi-top"><span class="vd-ico"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span><span class="lab">Net cashflow</span></div>
         <div class="vd-kpi-mid"><div class="val dash-skeleton" data-source="kpi" data-field="value" data-where="metric=net">—</div><span class="vd-pill" data-source="kpi" data-field="change" data-where="metric=net">—</span></div>
-        <div class="vd-spark dash-skeleton" data-source="cash_q" data-metric="net"></div>
+        <div class="vd-spark dash-skeleton" data-source="ytd" data-metric="net"></div>
         <div class="chg">vs <span data-source="kpi" data-field="prev" data-where="metric=net">—</span> in <span data-source="kpi" data-field="prev_label" data-where="metric=net">—</span></div>
       </div>
     </div>
@@ -375,31 +377,27 @@ dash.calc('vans', {
 
 dash.calc('drivers', {
   title: 'What is behind the change',
-  description: 'Trip-log trips and riders per trip by Needs and Social runs, for the latest quarter against the same months a year earlier, with how much of the rider gap each type explains.',
+  description: 'Trip-log trips and riders per trip by Needs and Social runs, fiscal year to date against the same months a year earlier, with how much of the rider gap each type explains.',
   inputs: ['trips'],
   fn: (trips) => {
     const nz = x => Number(x) || 0;
-    const qOf = r => r.quarter, active = trips.filter(t => nz(t.riders) > 0);
-    const latest = [...new Set(trips.map(qOf))].sort((a, b) => (a.slice(2, 4) + a.slice(5)) < (b.slice(2, 4) + b.slice(5)) ? -1 : 1).pop();
-    const pk = 'FY' + String(Number(latest.slice(2, 4)) - 1).padStart(2, '0') + ' ' + latest.slice(5);
-    const qs = (6 + 3 * (Number(latest.slice(-1)) - 1)) % 12;
-    const off = d => (Number(d.slice(5, 7)) - 1 - qs + 12) % 12;
-    const n = trips.filter(t => t.quarter === latest).reduce((m, t) => Math.max(m, off(t.date) + 1), 0);
-    const mon = i => ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][(qs + i) % 12];
-    const w = n >= 3 ? '' : n === 1 ? mon(0) : mon(0) + '–' + mon(n - 1);
-    const stat = (q, type) => {
-      const rs = active.filter(t => t.quarter === q && off(t.date) < n && (!type || t.category === type));
+    const fyOf = q => Number(q.slice(2, 4)), fm = d => (Number(d.slice(5, 7)) - 1 - 6 + 12) % 12;   // fiscal month 0 = July
+    const MON = ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+    const active = trips.filter(t => nz(t.riders) > 0);
+    const cur = Math.max(...trips.map(t => fyOf(t.quarter)));
+    const n = trips.filter(t => fyOf(t.quarter) === cur).reduce((m, t) => Math.max(m, fm(t.date) + 1), 0);
+    const w = n >= 12 ? '' : n === 1 ? MON[0] : MON[0] + '–' + MON[n - 1];
+    const lab = fy => n < 12 ? `FY${fy} YTD (${w})` : `FY${fy}`;
+    const stat = (fy, type) => {
+      const rs = active.filter(t => fyOf(t.quarter) === fy && fm(t.date) < n && (!type || t.category === type));
       const riders = rs.reduce((a, t) => a + nz(t.riders), 0);
       return {trips: rs.length, riders, per: rs.length ? Math.round(riders / rs.length * 10) / 10 : null};
     };
-    const out = [];
-    for (const [key, label, type] of [['trips', 'Trips', null], ['needs', 'Needs riders / trip', 'Needs'], ['social', 'Social riders / trip', 'Social']]) {
-      const c = stat(latest, type), p = stat(pk, type);
-      out.push({key, label, cur: key === 'trips' ? c.trips : c.per, prev: key === 'trips' ? p.trips : p.per,
-        cur_riders: c.riders, prev_riders: p.riders, cur_trips: c.trips, prev_trips: p.trips,
-        cur_label: n < 3 ? `${latest} (${w})` : latest, prev_label: n < 3 ? `${pk} (${w})` : pk});
-    }
-    return out;
+    return [['trips', 'Trips', null], ['needs', 'Needs riders / trip', 'Needs'], ['social', 'Social riders / trip', 'Social']].map(([key, label, type]) => {
+      const c = stat(cur, type), p = stat(cur - 1, type);
+      return {key, label, cur: key === 'trips' ? c.trips : c.per, prev: key === 'trips' ? p.trips : p.per,
+        cur_riders: c.riders, prev_riders: p.riders, cur_trips: c.trips, prev_trips: p.trips, cur_label: lab(cur), prev_label: lab(cur - 1)};
+    });
   }
 });
 
@@ -413,51 +411,54 @@ dash.calc('coverage', {
   }
 });
 
-dash.calc('kpi', {
-  title: 'Latest quarter vs last year',
-  description: 'The latest sign-up quarter against the same quarter a year earlier. When the latest quarter is only partly reported, last year is cut to the same months so the comparison is fair.',
-  inputs: ['signups_q', 'cash_q', 'signups', 'trips'],
-  fn: (signups_q, cash_q, signups, trips) => {
-    const L = signups_q[signups_q.length - 1];
-    const pk = 'FY' + String(Number(L.quarter.slice(2, 4)) - 1).padStart(2, '0') + ' ' + L.quarter.slice(5);
-    const qn = Number(L.quarter.slice(-1)), qs = (6 + 3 * (qn - 1)) % 12;
-    const off = d => (Number(d.slice(5, 7)) - 1 - qs + 12) % 12;          // month position within the fiscal quarter, 0-2
-    const mon = i => d3.utcFormat('%b')(new Date(Date.UTC(2000, (qs + i) % 12, 1)));
-    const months = rows => rows.filter(r => r.quarter === L.quarter).reduce((m, r) => Math.max(m, off(r.date) + 1), 0);
-    const nS = months(signups), nT = months(trips);
-    const window = n => n >= 3 ? '' : n === 1 ? mon(0) : mon(0) + '–' + mon(n - 1);
-    const partial = nS < 3;
-    const sum = (rows, q, n, f) => rows.filter(r => r.quarter === q && off(r.date) < n).reduce((a, r) => a + f(r), 0);
+dash.calc('ytd', {
+  title: 'Fiscal year to date, by month',
+  description: 'Running totals from July for the current fiscal year and the one before: sign-ups (riders, Needs, Social, riders per trip) and trip-log fares and net. The current year stops at the last month reported, so every point compares like with like.',
+  inputs: ['signups', 'trips'],
+  fn: (signups, trips) => {
     const nz = x => Number(x) || 0;
-    const pSign = q => {                                                  // prior-year sign-ups limited to the same months
-      const rs = signups.filter(r => r.quarter === q && off(r.date) < nS);
-      if (!rs.length) return {};
-      const needs = rs.reduce((a, r) => a + nz(r.needs), 0), social = rs.reduce((a, r) => a + nz(r.social), 0);
-      const tr = rs.filter(r => nz(r.needs) > 0).length + rs.filter(r => nz(r.social) > 0).length;
-      return {needs, social, total: needs + social, per: tr ? Math.round((needs + social) / tr * 10) / 10 : null};
+    const fyOf = q => Number(q.slice(2, 4)), fm = d => (Number(d.slice(5, 7)) - 1 - 6 + 12) % 12;   // fiscal month 0 = July
+    const MON = ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+    const cur = Math.max(...signups.map(r => fyOf(r.quarter)), ...trips.map(r => fyOf(r.quarter)));
+    const reported = rows => rows.filter(r => fyOf(r.quarter) === cur).reduce((m, r) => Math.max(m, fm(r.date) + 1), 0);
+    const nS = reported(signups), nT = reported(trips), r2 = x => Math.round(x * 100) / 100;
+    const out = [];
+    for (const fy of [cur - 1, cur]) {
+      const which = fy === cur ? 'cur' : 'prev';
+      for (let m = 0; m < 12; m++) {
+        const ss = signups.filter(r => fyOf(r.quarter) === fy && fm(r.date) <= m), ts = trips.filter(r => fyOf(r.quarter) === fy && fm(r.date) <= m);
+        const okS = ss.length && (which === 'prev' || m < nS), okT = ts.length && (which === 'prev' || m < nT);
+        const needs = ss.reduce((a, r) => a + nz(r.needs), 0), social = ss.reduce((a, r) => a + nz(r.social), 0);
+        const days = ss.filter(r => nz(r.needs) > 0).length + ss.filter(r => nz(r.social) > 0).length;
+        const fares = ts.reduce((a, r) => a + nz(r.fare), 0);
+        const costs = ts.reduce((a, r) => a + nz(r.tolls) + nz(r.parking) + nz(r.other_exp) + nz(r.fuel), 0);
+        out.push({which, fy: 'FY' + fy, m, month: MON[m], nS, nT,
+          riders: okS ? needs + social : null, needs: okS ? needs : null, social: okS ? social : null,
+          per_trip: okS && days ? Math.round((needs + social) / days * 10) / 10 : null,
+          fares: okT ? r2(fares) : null, net: okT ? r2(fares - costs) : null});
+      }
+    }
+    return out;
+  }
+});
+
+dash.calc('kpi', {
+  title: 'Fiscal year to date vs last year',
+  description: 'Fiscal-year-to-date totals against the same months of the previous fiscal year, so a partly reported year is compared fairly.',
+  inputs: ['ytd'],
+  fn: (ytd) => {
+    const cur = ytd.filter(r => r.which === 'cur'), prev = ytd.filter(r => r.which === 'prev');
+    const nS = cur[0].nS, nT = cur[0].nT;
+    const MON = ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+    const w = nS >= 12 ? '' : nS === 1 ? MON[0] : MON[0] + '–' + MON[nS - 1];
+    const lab = fy => nS < 12 ? `${fy} YTD (${w})` : fy;
+    const row = (metric, n) => {
+      const c = cur[n - 1][metric], p = prev[n - 1][metric];
+      return {metric, quarter: cur[0].fy, prev_quarter: prev[0].fy, cur_fy: cur[0].fy, prev_fy: prev[0].fy, partial: n < 12, m: n - 1,
+        cur_label: lab(cur[0].fy), prev_label: lab(prev[0].fy), value: c ?? null, prev: p ?? null,
+        change: (c != null && p) ? Math.round((c - p) / Math.abs(p) * 1000) / 1000 : null};
     };
-    const P = pSign(pk);
-    const r2 = x => Math.round(x * 100) / 100;
-    const cLrow = cash_q.find(q => q.quarter === L.quarter) || {};
-    const pTrips = trips.filter(t => t.quarter === pk && off(t.date) < nT);
-    const cP = pTrips.length ? (() => {
-      const fares = sum(trips, pk, nT, t => nz(t.fare)), exp = sum(trips, pk, nT, t => nz(t.tolls) + nz(t.parking) + nz(t.other_exp)), fuel = sum(trips, pk, nT, t => nz(t.fuel));
-      return {fares: r2(fares), net: r2(fares - exp - fuel)};
-    })() : {};
-    const per = q => (q.needs_trips + q.social_trips) ? Math.round(q.total / (q.needs_trips + q.social_trips) * 10) / 10 : null;
-    const w = window(nS);
-    const row = (metric, value, prev) => ({
-      metric, quarter: L.quarter, prev_quarter: pk, partial,
-      cur_label: partial ? `${L.quarter} so far (${w})` : L.quarter,
-      prev_label: partial ? `${pk} (${w})` : pk,
-      value: value ?? null, prev: prev ?? null,
-      change: (value != null && prev) ? Math.round((value - prev) / Math.abs(prev) * 1000) / 1000 : null
-    });
-    return [
-      row('riders', L.total, P.total), row('needs', L.needs, P.needs), row('social', L.social, P.social),
-      row('per_trip', per(L), P.per),
-      row('fares', cLrow.fares, cP.fares), row('net', cLrow.net, cP.net)
-    ];
+    return [row('riders', nS), row('needs', nS), row('social', nS), row('per_trip', nS), row('fares', nT), row('net', nT)];
   }
 });
 
@@ -526,10 +527,13 @@ function drawWhy(Dr) {
   document.getElementById('why-cur').textContent = tripsR.cur_label;
   document.getElementById('why-cur-i').style.background = dash.colors[1];
   const dN = needs.cur_riders - needs.prev_riders, dS = social.cur_riders - social.prev_riders, d = dN + dS;
-  const lead = Math.abs(dS) >= Math.abs(dN) ? ['Social', dS] : ['Needs', dN];
-  document.getElementById('why-take').textContent = d === 0 ? 'Rider counts are level with last year.'
-    : d < 0 ? `${Math.abs(d)} fewer riders on ${tripsR.cur_trips} trips vs ${tripsR.prev_trips}; ${lead[0]} runs account for ${Math.abs(lead[1])} of them.`
-    : `${d} more riders on ${tripsR.cur_trips} trips vs ${tripsR.prev_trips}; ${lead[0]} runs account for ${Math.abs(lead[1])} of them.`;
+  const curR = needs.cur_riders + social.cur_riders, prevR = needs.prev_riders + social.prev_riders;
+  const trp = tripsR.cur_trips === tripsR.prev_trips ? `the same ${tripsR.cur_trips} trips` : `${tripsR.cur_trips} trips vs ${tripsR.prev_trips}`;
+  const lead = Math.abs(dS) >= Math.abs(dN) ? ['Social outings', dS, 'Needs runs', dN] : ['Needs runs', dN, 'Social outings', dS];
+  document.getElementById('why-take').textContent = `Trip log, ${tripsR.cur_label} vs ${tripsR.prev_label}: ${fmtInt(curR)} riders vs ${fmtInt(prevR)} (${d > 0 ? '+' : d < 0 ? '−' : ''}${Math.abs(d)}) on ${trp}.`
+    + (d === 0 ? '' : Math.sign(lead[1]) === Math.sign(d) && Math.abs(lead[1]) <= Math.abs(d)
+      ? ` ${lead[0]} account for ${Math.abs(lead[1])} of the ${Math.abs(d)} ${d < 0 ? 'fewer' : 'more'} riders.${lead[3] === 0 ? ` ${lead[2]} were unchanged.` : ` ${lead[2]} account for the other ${Math.abs(lead[3])}.`}`
+      : ` ${lead[0]} carried ${Math.abs(lead[1])} ${lead[1] < 0 ? 'fewer' : 'more'} riders; ${lead[2]} carried ${Math.abs(lead[3])} ${lead[3] < 0 ? 'fewer' : 'more'}.`);
   const box = document.getElementById('why-rows'); box.textContent = '';
   const cols = {trips: 'var(--cds-chart-axis)', needs: dash.colors[0], social: dash.colors[1]};
   for (const r of rows) {
@@ -552,51 +556,48 @@ function drawWhy(Dr) {
   }
 }
 
-/* ---------- KPI sparklines (last 8 quarters up to the KPI quarter) ---------- */
-const sparkField = {riders: 'total', needs: 'needs', social: 'social', per_trip: 'total_per_trip', fares: 'fares', net: 'net'};
+/* ---------- KPI sparklines: this fiscal year vs last, running total by month ---------- */
 let sparkAnimated = false;
-function drawSparks(S, C, K) {
-  const kq = K.status === 'ok' && K.data && K.data[0] ? K.data[0] : null;
+function drawSparks(Y, K) {
+  const ok = K.status === 'ok' && Array.isArray(K.data) && K.data.length;
   let drew = false;
   document.querySelectorAll('.vd-spark').forEach(box => {
-    const metric = box.dataset.metric, src = box.dataset.source === 'cash_q' ? C : S;
-    if (!prep(box, src) || !kq) { if (!kq && src.status === 'ok') box.classList.add('dash-skeleton'); return; }
-    const end = src.data.findIndex(d => d.quarter === kq.quarter);
-    const rows = src.data.slice(0, end < 0 ? src.data.length : end + 1).slice(-8).filter(d => d[sparkField[metric]] != null);
-    if (rows.length < 2) { box.textContent = ''; return; }
-    const k = sparkField[metric], color = dash.colors[+box.closest('.vd-kpi').dataset.ci];
+    const metric = box.dataset.metric;
+    if (!prep(box, Y) || !ok) { if (!ok && Y.status === 'ok') box.classList.add('dash-skeleton'); return; }
+    const km = K.data.find(r => r.metric === metric);
+    const cur = Y.data.filter(r => r.which === 'cur' && r[metric] != null), prev = Y.data.filter(r => r.which === 'prev' && r[metric] != null);
+    if (!km || cur.length < 1 || prev.length < 2) { box.textContent = ''; return; }
+    const color = dash.colors[+box.closest('.vd-kpi').dataset.ci];
     const money = metric === 'fares' || metric === 'net';
-    const fmt = v => money ? fmtMoney(v) : metric === 'per_trip' ? d3.format('.1f')(v) : fmtInt(v);
+    const fmt = v => v == null ? '—' : money ? fmtMoney(v) : metric === 'per_trip' ? d3.format('.1f')(v) : fmtInt(v);
     const W = Math.max(120, box.clientWidth), H = 48, p = 5;
     const svg = newSvg(box, W, H);
-    const x = d3.scalePoint(rows.map(d => d.quarter), [p, W - p]);
-    const km = K.data.find(r => r.metric === metric) || kq;
-    const prevVal = (km.partial && km.prev != null) ? km.prev : (rows.find(d => d.quarter === kq.prev_quarter) || {})[k];
-    const lo = Math.min(0, d3.min(rows, d => d[k])), hi = d3.max(rows, d => d[k]) || 1;
+    const x = d3.scaleLinear([0, 11], [p, W - p]);
+    const all = [...cur, ...prev].map(d => d[metric]);
+    const lo = Math.min(0, d3.min(all)), hi = d3.max(all) || 1;
     const y = d3.scaleLinear([lo, hi], [H - 3, p]);
     const gid = 'vd-g-' + metric;
     const grad = svg.append('defs').append('linearGradient').attr('id', gid).attr('x1', 0).attr('x2', 0).attr('y1', 0).attr('y2', 1);
     [[0, .3], [.25, .18], [.5, .09], [.75, .03], [1, 0]].forEach(([o, a]) => grad.append('stop').attr('offset', o).attr('style', `stop-color:${color};stop-opacity:${a}`));
     if (lo < 0) svg.append('line').attr('x1', p).attr('x2', W - p).attr('y1', y(0)).attr('y2', y(0)).attr('stroke', 'var(--cds-chart-reference)').attr('stroke-dasharray', '2 3');
-    svg.append('path').attr('class', 'vd-sa').datum(rows).attr('fill', `url(#${gid})`)
-      .attr('d', d3.area().x(d => x(d.quarter)).y0(y(Math.max(0, lo))).y1(d => y(d[k])));
-    svg.append('path').attr('class', 'vd-sl').datum(rows).attr('pathLength', 1).attr('fill', 'none').attr('stroke', color).attr('stroke-width', 2).attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round')
-      .attr('d', d3.line().x(d => x(d.quarter)).y(d => y(d[k])));
-    const prev = rows.find(d => d.quarter === kq.prev_quarter);
-    if (prev) svg.append('circle').attr('class', 'vd-sd').attr('cx', x(prev.quarter)).attr('cy', y(prevVal)).attr('r', 3).attr('fill', 'var(--color-panel)').attr('stroke', 'var(--cds-chart-muted)').attr('stroke-width', 1.5);
-    const last = rows[rows.length - 1];
-    svg.append('circle').attr('class', 'vd-sd').attr('cx', x(last.quarter)).attr('cy', y(last[k])).attr('r', 6).attr('fill', color).attr('opacity', .2);
-    svg.append('circle').attr('class', 'vd-sd').attr('cx', x(last.quarter)).attr('cy', y(last[k])).attr('r', 3).attr('fill', color);
-    const hover = svg.append('circle').attr('r', 3).attr('fill', color).attr('opacity', 0);
+    const line = d3.line().x(d => x(d.m)).y(d => y(d[metric]));
+    svg.append('path').datum(prev).attr('fill', 'none').attr('stroke', 'var(--cds-chart-reference)').attr('stroke-width', 1.5).attr('stroke-dasharray', '3 3').attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round').attr('d', line);
+    svg.append('path').attr('class', 'vd-sa').datum(cur).attr('fill', `url(#${gid})`).attr('d', d3.area().x(d => x(d.m)).y0(y(Math.max(0, lo))).y1(d => y(d[metric])));
+    svg.append('path').attr('class', 'vd-sl').datum(cur).attr('pathLength', 1).attr('fill', 'none').attr('stroke', color).attr('stroke-width', 2).attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round').attr('d', line);
+    const last = cur[cur.length - 1], pm = prev.find(d => d.m === last.m);
+    svg.append('circle').attr('class', 'vd-sd').attr('cx', x(last.m)).attr('cy', y(last[metric])).attr('r', 6).attr('fill', color).attr('opacity', .2);
+    if (pm) svg.append('circle').attr('class', 'vd-sd').attr('cx', x(pm.m)).attr('cy', y(pm[metric])).attr('r', 5).attr('fill', 'none').attr('stroke', 'var(--cds-chart-reference)').attr('stroke-width', 1.5);
+    svg.append('circle').attr('class', 'vd-sd').attr('cx', x(last.m)).attr('cy', y(last[metric])).attr('r', 3).attr('fill', color);
+    const hc = svg.append('circle').attr('r', 3).attr('fill', color).attr('opacity', 0), hp = svg.append('circle').attr('r', 3).attr('fill', 'var(--cds-chart-reference)').attr('opacity', 0);
     svg.append('rect').attr('width', W).attr('height', H).attr('fill', 'transparent')
       .on('pointermove', ev => {
         const [px, py] = d3.pointer(ev, box);
-        const i = Math.max(0, Math.min(rows.length - 1, Math.round((px - p) / (x.step() || 1))));
-        const d = rows[i];
-        hover.attr('cx', x(d.quarter)).attr('cy', y(d[k])).attr('opacity', 1);
-        showTip(box, d.quarter + (km.partial && d === rows[rows.length - 1] ? ' (' + km.cur_label.match(/\((.*)\)/)[1] + ' so far)' : ''), [[null, box.closest('.vd-kpi').querySelector('.lab').textContent, fmt(d[k])]], px, py);
+        const m = Math.max(0, Math.min(11, Math.round(x.invert(px)))), c = cur.find(d => d.m === m), q = prev.find(d => d.m === m);
+        c ? hc.attr('cx', x(m)).attr('cy', y(c[metric])).attr('opacity', 1) : hc.attr('opacity', 0);
+        q ? hp.attr('cx', x(m)).attr('cy', y(q[metric])).attr('opacity', 1) : hp.attr('opacity', 0);
+        showTip(box, `Through ${(q || c || {}).month || ''}`, [[color, km.cur_fy, fmt(c && c[metric])], ['var(--cds-chart-muted)', km.prev_fy, fmt(q && q[metric])]], px, py);
       })
-      .on('pointerleave', () => { hover.attr('opacity', 0); hideTip(box); });
+      .on('pointerleave', () => { hc.attr('opacity', 0); hp.attr('opacity', 0); hideTip(box); });
     drew = true;
   });
   const wrap = document.querySelector('.vd-kpis');
@@ -851,8 +852,8 @@ function drawTable(C) {
 }
 
 dash.onData(() => {
-  const S = dash.data('signups_q'), C = dash.data('cash_q'), D = dash.data('dest'), K = dash.data('kpi'), Cv = dash.data('coverage'), V = dash.data('vans'), Dr = dash.data('drivers');
-  for (const f of [() => drawVans(V), () => drawKpis(K), () => drawWhy(Dr), () => drawSparks(S, C, K), () => drawCoverage(Cv), () => drawRiders(S), () => drawPerTrip(S), () => drawCash(C), () => drawDest(D), () => drawTable(C)]) {
+  const S = dash.data('signups_q'), C = dash.data('cash_q'), D = dash.data('dest'), K = dash.data('kpi'), Cv = dash.data('coverage'), V = dash.data('vans'), Dr = dash.data('drivers'), Y = dash.data('ytd');
+  for (const f of [() => drawVans(V), () => drawKpis(K), () => drawWhy(Dr), () => drawSparks(Y, K), () => drawCoverage(Cv), () => drawRiders(S), () => drawPerTrip(S), () => drawCash(C), () => drawDest(D), () => drawTable(C)]) {
     try { f(); } catch (e) { console.error(e); }
   }
 });
